@@ -1,5 +1,6 @@
+#pragma once
 static inline __m256i
-dec_reshuffle (const __m256i in)
+dec_reshuffle_avx2 (const __m256i in)
 {
 	// in, lower lane, bits, upper case are most significant bits, lower
 	// case are least significant bits:

@@ -1,5 +1,6 @@
+#pragma once
 static inline __m128i
-dec_reshuffle (const __m128i in)
+dec_reshuffle_sse3 (const __m128i in)
 {
 	// in, bits, upper case are most significant bits, lower case are least significant bits
 	// 00llllll 00kkkkLL 00jjKKKK 00JJJJJJ

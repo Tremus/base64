@@ -5,10 +5,9 @@
 #include "../../../include/libbase64.h"
 #include "../../tables/tables.h"
 #include "../../codecs.h"
-#include "config.h"
 #include "../../env.h"
 
-#if HAVE_AVX
+#if BASE64_HAVE_AVX
 #include <immintrin.h>
 
 // Only enable inline assembly on supported compilers and on 64-bit CPUs.
@@ -31,11 +30,11 @@
 # include "../ssse3/enc_loop.c"
 #endif
 
-#endif	// HAVE_AVX
+#endif	// BASE64_HAVE_AVX
 
-BASE64_ENC_FUNCTION(avx)
+void base64_stream_encode_avx(struct base64_state *state, const char *src, size_t srclen, char	*out, size_t *outlen)
 {
-#if HAVE_AVX
+#if BASE64_HAVE_AVX
 	#include "../generic/enc_head.c"
 
 	// For supported compilers, use a hand-optimized inline assembly
@@ -54,9 +53,9 @@ BASE64_ENC_FUNCTION(avx)
 #endif
 }
 
-BASE64_DEC_FUNCTION(avx)
+int	base64_stream_decode_avx(struct base64_state *state, const char *src, size_t srclen, char *out, size_t *outlen)
 {
-#if HAVE_AVX
+#if BASE64_HAVE_AVX
 	#include "../generic/dec_head.c"
 	dec_loop_ssse3(&s, &slen, &o, &olen);
 	#include "../generic/dec_tail.c"

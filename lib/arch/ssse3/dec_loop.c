@@ -1,3 +1,4 @@
+#pragma once
 // The input consists of six character sets in the Base64 alphabet, which we
 // need to map back to the 6-bit values they represent. There are three ranges,
 // two singles, and then there's the rest.
@@ -104,7 +105,7 @@ dec_loop_ssse3_inner (const uint8_t **s, uint8_t **o, size_t *rounds)
 	str = _mm_add_epi8(str, roll);
 
 	// Reshuffle the input to packed 12-byte output format:
-	str = dec_reshuffle(str);
+	str = dec_reshuffle_sse3(str);
 
 	// Store the output:
 	_mm_storeu_si128((__m128i *) *o, str);

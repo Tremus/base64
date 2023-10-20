@@ -1,3 +1,4 @@
+#pragma once
 static inline int
 dec_loop_avx2_inner (const uint8_t **s, uint8_t **o, size_t *rounds)
 {
@@ -41,7 +42,7 @@ dec_loop_avx2_inner (const uint8_t **s, uint8_t **o, size_t *rounds)
 	str = _mm256_add_epi8(str, roll);
 
 	// Reshuffle the input to packed 12-byte output format:
-	str = dec_reshuffle(str);
+	str = dec_reshuffle_avx2(str);
 
 	// Store the output:
 	_mm256_storeu_si256((__m256i *) *o, str);

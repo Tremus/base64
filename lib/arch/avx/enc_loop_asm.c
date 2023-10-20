@@ -1,3 +1,4 @@
+#pragma once
 // Apologies in advance for combining the preprocessor with inline assembly,
 // two notoriously gnarly parts of C, but it was necessary to avoid a lot of
 // code repetition. The preprocessor is used to template large sections of
@@ -6,12 +7,12 @@
 
 // Generate a block of inline assembly that loads register R0 from memory. The
 // offset at which the register is loaded is set by the given round.
-#define LOAD(R0, ROUND) \
-	"vlddqu ("#ROUND" * 12)(%[src]), %["R0"] \n\t"
+#define BASE64_AVX_LOAD(R0, BASE64_AVX_ROUND) \
+	"vlddqu ("#BASE64_AVX_ROUND" * 12)(%[src]), %["R0"] \n\t"
 
 // Generate a block of inline assembly that deinterleaves and shuffles register
 // R0 using preloaded constants. Outputs in R0 and R1.
-#define SHUF(R0, R1, R2) \
+#define BASE64_AVX_SHUF(R0, R1, R2) \
 	"vpshufb  %[lut0], %["R0"], %["R1"] \n\t" \
 	"vpand    %["R1"], %[msk0], %["R2"] \n\t" \
 	"vpand    %["R1"], %[msk2], %["R1"] \n\t" \
@@ -21,7 +22,7 @@
 
 // Generate a block of inline assembly that takes R0 and R1 and translates
 // their contents to the base64 alphabet, using preloaded constants.
-#define TRAN(R0, R1, R2) \
+#define BASE64_AVX_TRAN(R0, R1, R2) \
 	"vpsubusb %[n51],  %["R1"], %["R0"] \n\t" \
 	"vpcmpgtb %[n25],  %["R1"], %["R2"] \n\t" \
 	"vpsubb   %["R2"], %["R0"], %["R0"] \n\t" \
@@ -30,17 +31,17 @@
 
 // Generate a block of inline assembly that stores the given register R0 at an
 // offset set by the given round.
-#define STOR(R0, ROUND) \
-	"vmovdqu %["R0"], ("#ROUND" * 16)(%[dst]) \n\t"
+#define BASE64_AVX_STOR(R0, BASE64_AVX_ROUND) \
+	"vmovdqu %["R0"], ("#BASE64_AVX_ROUND" * 16)(%[dst]) \n\t"
 
 // Generate a block of inline assembly that generates a single self-contained
 // encoder round: fetch the data, process it, and store the result. Then update
 // the source and destination pointers.
-#define ROUND() \
-	LOAD("a", 0) \
-	SHUF("a", "b", "c") \
-	TRAN("a", "b", "c") \
-	STOR("a", 0) \
+#define BASE64_AVX_ROUND() \
+	BASE64_AVX_LOAD("a", 0) \
+	BASE64_AVX_SHUF("a", "b", "c") \
+	BASE64_AVX_TRAN("a", "b", "c") \
+	BASE64_AVX_STOR("a", 0) \
 	"add $12, %[src] \n\t" \
 	"add $16, %[dst] \n\t"
 
@@ -55,12 +56,12 @@
 //  x  indicates that a register is used as a temporary by that step.
 //  V  indicates that a register is an input or output to the macro.
 //
-#define ROUND_3_INIT() 			/*  a b c d e f  */ \
-	LOAD("a",   0)			/*  +            */ \
-	SHUF("a", "d", "e")		/*  |     + x    */ \
-	LOAD("b",   1)			/*  | +   |      */ \
-	TRAN("a", "d", "e")		/*  | |   - x    */ \
-	LOAD("c",   2)			/*  V V V        */
+#define BASE64_AVX_ROUND_3_INIT() 			        /*  a b c d e f  */ \
+	BASE64_AVX_LOAD("a",   0)			/*  +            */ \
+	BASE64_AVX_SHUF("a", "d", "e")		/*  |     + x    */ \
+	BASE64_AVX_LOAD("b",   1)			/*  | +   |      */ \
+	BASE64_AVX_TRAN("a", "d", "e")		/*  | |   - x    */ \
+	BASE64_AVX_LOAD("c",   2)			/*  V V V        */
 
 // Define a macro that translates, shuffles and stores the input registers A, B
 // and C, and preloads registers D, E and F for the next round.
@@ -69,48 +70,48 @@
 // carefully interleaves memory operations with data operations for optimal
 // pipelined performance.
 
-#define ROUND_3(ROUND, A,B,C,D,E,F) 	/*  A B C D E F  */ \
-	LOAD(D, (ROUND + 3))		/*  V V V +      */ \
-	SHUF(B, E, F)			/*  | | | | + x  */ \
-	STOR(A, (ROUND + 0))		/*  - | | | |    */ \
-	TRAN(B, E, F)			/*    | | | - x  */ \
-	LOAD(E, (ROUND + 4))		/*    | | | +    */ \
-	SHUF(C, A, F)			/*  + | | | | x  */ \
-	STOR(B, (ROUND + 1))		/*  | - | | |    */ \
-	TRAN(C, A, F)			/*  -   | | | x  */ \
-	LOAD(F, (ROUND + 5))		/*      | | | +  */ \
-	SHUF(D, A, B)			/*  + x | | | |  */ \
-	STOR(C, (ROUND + 2))		/*  |   - | | |  */ \
-	TRAN(D, A, B)			/*  - x   V V V  */
+#define BASE64_AVX_ROUND_3(BASE64_AVX_ROUND, A,B,C,D,E,F) 	/*  A B C D E F  */ \
+	BASE64_AVX_LOAD(D, (BASE64_AVX_ROUND + 3))		/*  V V V +      */ \
+	BASE64_AVX_SHUF(B, E, F)			/*  | | | | + x  */ \
+	BASE64_AVX_STOR(A, (BASE64_AVX_ROUND + 0))		/*  - | | | |    */ \
+	BASE64_AVX_TRAN(B, E, F)			/*    | | | - x  */ \
+	BASE64_AVX_LOAD(E, (BASE64_AVX_ROUND + 4))		/*    | | | +    */ \
+	BASE64_AVX_SHUF(C, A, F)			/*  + | | | | x  */ \
+	BASE64_AVX_STOR(B, (BASE64_AVX_ROUND + 1))		/*  | - | | |    */ \
+	BASE64_AVX_TRAN(C, A, F)			/*  -   | | | x  */ \
+	BASE64_AVX_LOAD(F, (BASE64_AVX_ROUND + 5))		/*      | | | +  */ \
+	BASE64_AVX_SHUF(D, A, B)			/*  + x | | | |  */ \
+	BASE64_AVX_STOR(C, (BASE64_AVX_ROUND + 2))		/*  |   - | | |  */ \
+	BASE64_AVX_TRAN(D, A, B)			/*  - x   V V V  */
 
-// Define a macro that terminates a ROUND_3 macro by taking pre-loaded
+// Define a macro that terminates a BASE64_AVX_ROUND_3 macro by taking pre-loaded
 // registers D, E and F, and translating, shuffling and storing them.
-#define ROUND_3_END(ROUND, A,B,C,D,E,F)	/*  A B C D E F  */ \
-	SHUF(E, A, B)			/*  + x   V V V  */ \
-	STOR(D, (ROUND + 3))		/*  |     - | |  */ \
-	TRAN(E, A, B)			/*  - x     | |  */ \
-	SHUF(F, C, D)			/*      + x | |  */ \
-	STOR(E, (ROUND + 4))		/*      |   - |  */ \
-	TRAN(F, C, D)			/*      - x   |  */ \
-	STOR(F, (ROUND + 5))		/*            -  */
+#define BASE64_AVX_ROUND_3_END(BASE64_AVX_ROUND, A,B,C,D,E,F)	/*  A B C D E F  */ \
+	BASE64_AVX_SHUF(E, A, B)			/*  + x   V V V  */ \
+	BASE64_AVX_STOR(D, (BASE64_AVX_ROUND + 3))		/*  |     - | |  */ \
+	BASE64_AVX_TRAN(E, A, B)			/*  - x     | |  */ \
+	BASE64_AVX_SHUF(F, C, D)			/*      + x | |  */ \
+	BASE64_AVX_STOR(E, (BASE64_AVX_ROUND + 4))		/*      |   - |  */ \
+	BASE64_AVX_TRAN(F, C, D)			/*      - x   |  */ \
+	BASE64_AVX_STOR(F, (BASE64_AVX_ROUND + 5))		/*            -  */
 
 // Define a type A round. Inputs are a, b, and c, outputs are d, e, and f.
-#define ROUND_3_A(ROUND) \
-	ROUND_3(ROUND, "a", "b", "c", "d", "e", "f")
+#define BASE64_AVX_ROUND_3_A(BASE64_AVX_ROUND) \
+	BASE64_AVX_ROUND_3(BASE64_AVX_ROUND, "a", "b", "c", "d", "e", "f")
 
 // Define a type B round. Inputs and outputs are swapped with regard to type A.
-#define ROUND_3_B(ROUND) \
-	ROUND_3(ROUND, "d", "e", "f", "a", "b", "c")
+#define BASE64_AVX_ROUND_3_B(BASE64_AVX_ROUND) \
+	BASE64_AVX_ROUND_3(BASE64_AVX_ROUND, "d", "e", "f", "a", "b", "c")
 
 // Terminating macro for a type A round.
-#define ROUND_3_A_LAST(ROUND) \
-	ROUND_3_A(ROUND) \
-	ROUND_3_END(ROUND, "a", "b", "c", "d", "e", "f")
+#define BASE64_AVX_ROUND_3_A_LAST(BASE64_AVX_ROUND) \
+	BASE64_AVX_ROUND_3_A(BASE64_AVX_ROUND) \
+	BASE64_AVX_ROUND_3_END(BASE64_AVX_ROUND, "a", "b", "c", "d", "e", "f")
 
 // Terminating macro for a type B round.
-#define ROUND_3_B_LAST(ROUND) \
-	ROUND_3_B(ROUND) \
-	ROUND_3_END(ROUND, "d", "e", "f", "a", "b", "c")
+#define BASE64_AVX_ROUND_3_B_LAST(BASE64_AVX_ROUND) \
+	BASE64_AVX_ROUND_3_B(BASE64_AVX_ROUND) \
+	BASE64_AVX_ROUND_3_END(BASE64_AVX_ROUND, "d", "e", "f", "a", "b", "c")
 
 // Suppress clang's warning that the literal string in the asm statement is
 // overlong (longer than the ISO-mandated minimum size of 4095 bytes for C99
@@ -164,18 +165,18 @@ enc_loop_avx (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 		"    jmp  36f                \n\t"
 		"                            \n\t"
 		".balign 64                  \n\t"
-		"36: " ROUND_3_INIT()
-		"    " ROUND_3_A( 0)
-		"    " ROUND_3_B( 3)
-		"    " ROUND_3_A( 6)
-		"    " ROUND_3_B( 9)
-		"    " ROUND_3_A(12)
-		"    " ROUND_3_B(15)
-		"    " ROUND_3_A(18)
-		"    " ROUND_3_B(21)
-		"    " ROUND_3_A(24)
-		"    " ROUND_3_B(27)
-		"    " ROUND_3_A_LAST(30)
+		"36: " BASE64_AVX_ROUND_3_INIT()
+		"    " BASE64_AVX_ROUND_3_A( 0)
+		"    " BASE64_AVX_ROUND_3_B( 3)
+		"    " BASE64_AVX_ROUND_3_A( 6)
+		"    " BASE64_AVX_ROUND_3_B( 9)
+		"    " BASE64_AVX_ROUND_3_A(12)
+		"    " BASE64_AVX_ROUND_3_B(15)
+		"    " BASE64_AVX_ROUND_3_A(18)
+		"    " BASE64_AVX_ROUND_3_B(21)
+		"    " BASE64_AVX_ROUND_3_A(24)
+		"    " BASE64_AVX_ROUND_3_B(27)
+		"    " BASE64_AVX_ROUND_3_A_LAST(30)
 		"    add $(12 * 36), %[src] \n\t"
 		"    add $(16 * 36), %[dst] \n\t"
 		"    dec %[loops]           \n\t"
@@ -184,12 +185,12 @@ enc_loop_avx (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 		// Enter an 18x unrolled loop for rounds of 18 or more.
 		"18: cmp $18, %[rounds] \n\t"
 		"    jl  9f             \n\t"
-		"    " ROUND_3_INIT()
-		"    " ROUND_3_A(0)
-		"    " ROUND_3_B(3)
-		"    " ROUND_3_A(6)
-		"    " ROUND_3_B(9)
-		"    " ROUND_3_A_LAST(12)
+		"    " BASE64_AVX_ROUND_3_INIT()
+		"    " BASE64_AVX_ROUND_3_A(0)
+		"    " BASE64_AVX_ROUND_3_B(3)
+		"    " BASE64_AVX_ROUND_3_A(6)
+		"    " BASE64_AVX_ROUND_3_B(9)
+		"    " BASE64_AVX_ROUND_3_A_LAST(12)
 		"    sub $18,        %[rounds] \n\t"
 		"    add $(12 * 18), %[src]    \n\t"
 		"    add $(16 * 18), %[dst]    \n\t"
@@ -197,9 +198,9 @@ enc_loop_avx (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 		// Enter a 9x unrolled loop for rounds of 9 or more.
 		"9:  cmp $9, %[rounds] \n\t"
 		"    jl  6f            \n\t"
-		"    " ROUND_3_INIT()
-		"    " ROUND_3_A(0)
-		"    " ROUND_3_B_LAST(3)
+		"    " BASE64_AVX_ROUND_3_INIT()
+		"    " BASE64_AVX_ROUND_3_A(0)
+		"    " BASE64_AVX_ROUND_3_B_LAST(3)
 		"    sub $9,        %[rounds] \n\t"
 		"    add $(12 * 9), %[src]    \n\t"
 		"    add $(16 * 9), %[dst]    \n\t"
@@ -207,8 +208,8 @@ enc_loop_avx (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 		// Enter a 6x unrolled loop for rounds of 6 or more.
 		"6:  cmp $6, %[rounds] \n\t"
 		"    jl  55f           \n\t"
-		"    " ROUND_3_INIT()
-		"    " ROUND_3_A_LAST(0)
+		"    " BASE64_AVX_ROUND_3_INIT()
+		"    " BASE64_AVX_ROUND_3_A_LAST(0)
 		"    sub $6,        %[rounds] \n\t"
 		"    add $(12 * 6), %[src]    \n\t"
 		"    add $(16 * 6), %[dst]    \n\t"
@@ -227,11 +228,11 @@ enc_loop_avx (const uint8_t **s, size_t *slen, uint8_t **o, size_t *olen)
 
 		// Block of non-interlaced encoding rounds, which can each
 		// individually be jumped to. Rounds fall through to the next.
-		"5: " ROUND()
-		"4: " ROUND()
-		"3: " ROUND()
-		"2: " ROUND()
-		"1: " ROUND()
+		"5: " BASE64_AVX_ROUND()
+		"4: " BASE64_AVX_ROUND()
+		"3: " BASE64_AVX_ROUND()
+		"2: " BASE64_AVX_ROUND()
+		"1: " BASE64_AVX_ROUND()
 		"0: \n\t"
 
 		// Outputs (modified).

@@ -12,14 +12,14 @@
 // These static function pointers are initialized once when the library is
 // first used, and remain in use for the remaining lifetime of the program.
 // The idea being that CPU features don't change at runtime.
-static struct codec codec = { NULL, NULL };
+static struct base64_codec g_base64_codec = { NULL, NULL };
 
 void
 base64_stream_encode_init (struct base64_state *state, int flags)
 {
 	// If any of the codec flags are set, redo choice:
-	if (codec.enc == NULL || flags & 0xFF) {
-		codec_choose(&codec, flags);
+	if (g_base64_codec.enc == NULL || flags & 0xFF) {
+		base64_codec_choose(&g_base64_codec, flags);
 	}
 	state->eof = 0;
 	state->bytes = 0;
@@ -36,7 +36,7 @@ base64_stream_encode
 	, size_t		*outlen
 	)
 {
-	codec.enc(state, src, srclen, out, outlen);
+	g_base64_codec.enc(state, src, srclen, out, outlen);
 }
 
 void
@@ -68,8 +68,8 @@ void
 base64_stream_decode_init (struct base64_state *state, int flags)
 {
 	// If any of the codec flags are set, redo choice:
-	if (codec.dec == NULL || flags & 0xFFFF) {
-		codec_choose(&codec, flags);
+	if (g_base64_codec.dec == NULL || flags & 0xFFFF) {
+		base64_codec_choose(&g_base64_codec, flags);
 	}
 	state->eof = 0;
 	state->bytes = 0;
@@ -86,7 +86,7 @@ base64_stream_decode
 	, size_t		*outlen
 	)
 {
-	return codec.dec(state, src, srclen, out, outlen);
+	return g_base64_codec.dec(state, src, srclen, out, outlen);
 }
 
 #ifdef _OPENMP

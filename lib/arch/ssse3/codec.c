@@ -5,10 +5,9 @@
 #include "../../../include/libbase64.h"
 #include "../../tables/tables.h"
 #include "../../codecs.h"
-#include "config.h"
 #include "../../env.h"
 
-#if HAVE_SSSE3
+#if BASE64_HAVE_SSSE3
 #include <tmmintrin.h>
 
 // Only enable inline assembly on supported compilers and on 64-bit CPUs.
@@ -33,11 +32,11 @@
 # include "enc_loop.c"
 #endif
 
-#endif	// HAVE_SSSE3
+#endif	// BASE64_HAVE_SSSE3
 
-BASE64_ENC_FUNCTION(ssse3)
+void base64_stream_encode_ssse3(struct base64_state *state, const char *src, size_t srclen, char	*out, size_t *outlen)
 {
-#if HAVE_SSSE3
+#if BASE64_HAVE_SSSE3
 	#include "../generic/enc_head.c"
 	enc_loop_ssse3(&s, &slen, &o, &olen);
 	#include "../generic/enc_tail.c"
@@ -46,9 +45,9 @@ BASE64_ENC_FUNCTION(ssse3)
 #endif
 }
 
-BASE64_DEC_FUNCTION(ssse3)
+int	base64_stream_decode_ssse3(struct base64_state *state, const char *src, size_t srclen, char *out, size_t *outlen)
 {
-#if HAVE_SSSE3
+#if BASE64_HAVE_SSSE3
 	#include "../generic/dec_head.c"
 	dec_loop_ssse3(&s, &slen, &o, &olen);
 	#include "../generic/dec_tail.c"

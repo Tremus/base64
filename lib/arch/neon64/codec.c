@@ -5,11 +5,10 @@
 #include "../../../include/libbase64.h"
 #include "../../tables/tables.h"
 #include "../../codecs.h"
-#include "config.h"
 #include "../../env.h"
 
 #ifdef __aarch64__
-#  if (defined(__ARM_NEON__) || defined(__ARM_NEON)) && HAVE_NEON64
+#  if (defined(__ARM_NEON__) || defined(__ARM_NEON)) && BASE64_HAVE_NEON64
 #    define BASE64_USE_NEON64
 #  endif
 #endif
@@ -72,7 +71,7 @@ load_64byte_table (const uint8_t *p)
 // (48 bytes encode, 64 bytes decode) that we inline the
 // uint64 codec to stay performant on smaller inputs.
 
-BASE64_ENC_FUNCTION(neon64)
+void base64_stream_encode_neon64(struct base64_state *state, const char *src, size_t srclen, char	*out, size_t *outlen)
 {
 #ifdef BASE64_USE_NEON64
 	#include "../generic/enc_head.c"
@@ -84,7 +83,7 @@ BASE64_ENC_FUNCTION(neon64)
 #endif
 }
 
-BASE64_DEC_FUNCTION(neon64)
+int	base64_stream_decode_neon64(struct base64_state *state, const char *src, size_t srclen, char *out, size_t *outlen)
 {
 #ifdef BASE64_USE_NEON64
 	#include "../generic/dec_head.c"

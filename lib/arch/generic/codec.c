@@ -5,7 +5,6 @@
 #include "../../../include/libbase64.h"
 #include "../../tables/tables.h"
 #include "../../codecs.h"
-#include "config.h"
 #include "../../env.h"
 
 #if BASE64_WORDSIZE == 32
@@ -18,7 +17,7 @@
 #  include "32/dec_loop.c"
 #endif
 
-BASE64_ENC_FUNCTION(plain)
+void base64_stream_encode_plain(struct base64_state *state, const char *src, size_t srclen, char	*out, size_t *outlen)
 {
 	#include "enc_head.c"
 #if BASE64_WORDSIZE == 32
@@ -29,7 +28,7 @@ BASE64_ENC_FUNCTION(plain)
 	#include "enc_tail.c"
 }
 
-BASE64_DEC_FUNCTION(plain)
+int	base64_stream_decode_plain(struct base64_state *state, const char *src, size_t srclen, char *out, size_t *outlen)
 {
 	#include "dec_head.c"
 #if BASE64_WORDSIZE >= 32

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdint.h>
 
 const uint16_t base64_table_enc_12bit[] = {

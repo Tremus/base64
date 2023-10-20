@@ -5,11 +5,10 @@
 #include "../../../include/libbase64.h"
 #include "../../tables/tables.h"
 #include "../../codecs.h"
-#include "config.h"
 #include "../../env.h"
 
 #ifdef __arm__
-#  if (defined(__ARM_NEON__) || defined(__ARM_NEON)) && HAVE_NEON32
+#  if (defined(__ARM_NEON__) || defined(__ARM_NEON)) && BASE64_HAVE_NEON32
 #    define BASE64_USE_NEON32
 #  endif
 #endif
@@ -52,7 +51,7 @@ vqtbl1q_u8 (const uint8x16_t lut, const uint8x16_t indices)
 // (48 bytes encode, 32 bytes decode) that we inline the
 // uint32 codec to stay performant on smaller inputs.
 
-BASE64_ENC_FUNCTION(neon32)
+void base64_stream_encode_neon32(struct base64_state *state, const char *src, size_t srclen, char	*out, size_t *outlen)
 {
 #ifdef BASE64_USE_NEON32
 	#include "../generic/enc_head.c"
@@ -64,7 +63,7 @@ BASE64_ENC_FUNCTION(neon32)
 #endif
 }
 
-BASE64_DEC_FUNCTION(neon32)
+int	base64_stream_decode_neon32(struct base64_state *state, const char *src, size_t srclen, char *out, size_t *outlen)
 {
 #ifdef BASE64_USE_NEON32
 	#include "../generic/dec_head.c"
