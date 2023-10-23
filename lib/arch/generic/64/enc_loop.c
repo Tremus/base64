@@ -1,3 +1,4 @@
+#pragma once
 static inline void
 enc_loop_generic_64_inner (const uint8_t **s, uint8_t **o)
 {
