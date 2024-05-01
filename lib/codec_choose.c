@@ -20,12 +20,12 @@
 	#include <intrin.h>
 	#define __cpuid_count(__level, __count, __eax, __ebx, __ecx, __edx) \
 	{						\
-		int info[4];				\
+		int info ## __level[4];				\
 		__cpuidex(info, __level, __count);	\
-		__eax = info[0];			\
-		__ebx = info[1];			\
-		__ecx = info[2];			\
-		__edx = info[3];			\
+		__eax = info ## __level[0];			\
+		__ebx = info ## __level[1];			\
+		__ecx = info ## __level[2];			\
+		__edx = info ## __level[3];			\
 	}
 	#define __cpuid(__level, __eax, __ebx, __ecx, __edx) \
 		__cpuid_count(__level, 0, __eax, __ebx, __ecx, __edx)
